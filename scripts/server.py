@@ -7,6 +7,13 @@
 import socket
 import time
 
+def forwardMessage(package):
+    if(package.find('T0')):
+        print('Found T0')
+
+def bootSequence():
+
+#Set up server
 server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 ip = '10.0.0.100'
 port = 5004
@@ -35,10 +42,3 @@ while True:
     except:
 
 
-def forwardMessage(package):
-    if(package.find('T0')):
-        print('Found T0')
-
-
-
-def bootSequence():

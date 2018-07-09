@@ -2,6 +2,8 @@
 #TODO:
 #1. Add serial and gcode parser
 #2. Add logic for gcode
+#3. Sequence it out. Server should always home at the start of a session.
+#4. Should server keep track of position and avoid collision? Sketch it out.
 import socket
 import time
 
@@ -22,9 +24,21 @@ client , addr = server.accept()
 print('Got a connection from ', addr[0],' : ', addr[1])
 
 while True:
-    data = client.recv(1024).decode()
-    print('Received ', data, ' from the client')
-    client.send("Tower 1 Moving".encode())
-    time.sleep(1)
+    try:
+        data = client.recv(1024).decode()
+        forwardMessage(data)
+        print('Received ', data, ' from the client')
+        client.send("Tower 1 Moving".encode())
+        time.sleep(1)
+    except KeyboardInterrupt:
+        server.close()
+    except:
 
 
+def forwardMessage(package):
+    if(package.find('T0')):
+        print('Found T0')
+
+
+
+def bootSequence():

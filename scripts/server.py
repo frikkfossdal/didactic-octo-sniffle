@@ -1,44 +1,63 @@
-#This script goes on the raspberryPi controlling hulti
-#TODO:
-#1. Add serial and gcode parser
-#2. Add logic for gcode
-#3. Sequence it out. Server should always home at the start of a session.
-#4. Should server keep track of position and avoid collision? Sketch it out.
+#TCP server example
 import socket
-import time
+import sys
+from _thread import *
 
-def forwardMessage(package):
-    if(package.find('T0')):
-        print('Found T0')
+HOST = '127.0.0.1'
+PORT = 5004
 
-def bootSequence():
+print('Hulti server booting up')
 
-#Set up server
-server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-ip = '10.0.0.100'
-port = 5004
-address = (ip,port)
-server.bind(address)
-print('server running on: ' + ip + ':' + str(port))
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+print("Socket created")
 
-#currently only accepting one client
-print('only accepting one client')
-server.listen(1)
-print('listening...')
+try:
+	server.bind((HOST, PORT))
+	print('Socket bind ok ')
+except socket.error as msg:
+	print('Bind failed. Error code: ' + str(msg[0]) + ' Message: ' + msg[1])
+	sys.exit()
 
-#accept connection
-client , addr = server.accept()
-print('Got a connection from ', addr[0],' : ', addr[1])
+server.listen(5)
+print('Server listening on: ' + str(HOST) + ':' + str(PORT))
 
-while True:
-    try:
-        data = client.recv(1024).decode()
-        forwardMessage(data)
-        print('Received ', data, ' from the client')
-        client.send("Tower 1 Moving".encode())
-        time.sleep(1)
-    except KeyboardInterrupt:
-        server.close()
-    except:
+#function that checks the message and allocates it to the 
+#appropriate 'tower'
+def checkMessage(message):
+	if not message: 
+		print('message is empty...')
+	if 'T0' in message: 
+		print('this is a message to tower 0')
+	if 'T1' in message: 
+		print('this is a message to tower 1')
+	if 'T2' in message: 
+		print('this is a message to tower 2')
+	if 'T3' in message: 
+		print('this is a message to tower 3')
+		
+#function for handling connections. Used to create threads
+def clientthread(conn):
+	conn.send('Welcome to the void'.encode())
+	while True:
+		#receive data from the client
+		#this is what you need to parse serially
 
+		data = conn.recv(1024)
+		checkMessage(data.decode())
+		reply = 'Server Received: ' + str(data)
+		print('Received: ' + data.decode())
+		if not data:
+			break
+		conn.sendall(reply.encode())
+	#loop broken
+	conn.close()
 
+while 1: 
+	#wait to accept a connection - blocking call
+	conn, addr = server.accept()
+	print('Connected to client at: ' +addr[0] + ':' + str(addr[1]))
+
+	#start new thread. Takes 1st argument as function name to be run
+	start_new_thread(clientthread, (conn,))
+
+server.close()
